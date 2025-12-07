@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>CSUN Map Quiz</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="container">
+    <div id="sidebar">
+      <h1>Map Quiz. Please double click<br>on the map the location of:</h1>
+
+      <button class="question-btn" data-index="0">Where is the Bookstore?</button>
+      <button class="question-btn" data-index="1">Where is Jacaranda Hall?</button>
+      <button class="question-btn" data-index="2">Where is Manzanita Hall?</button>
+      <button class="question-btn" data-index="3">Where is the Library?</button>
+      <!-- assigned: Police Services B3 -->
+      <button class="question-btn" data-index="4">Where is Police Services?</button>
+
+      <div id="status">Click a question to start.</div>
+    </div>
+
+    <div id="map"></div>
+  </div>
+
+  <!-- quiz logic -->
+  <script src="jscript.js"></script>
+
+  <!-- Google Maps JS API (put YOUR real key in the key= part) -->
+  <script async
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBwuv6zIca38hVmntwZGcn3OXZahH01T6w&loading=async&callback=initMap">
+  </script>
+</body>
+</html>

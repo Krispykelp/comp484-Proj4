@@ -1,0 +1,49 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: #e4d3aa;
+}
+
+#container {
+  display: flex;
+  height: 100vh;
+}
+
+#sidebar {
+  width: 35%;
+  padding: 20px;
+}
+
+#map {
+  flex: 1;
+  height: 100%;
+}
+
+h1 {
+  margin-top: 0;
+  font-size: 22px;
+}
+
+.question-btn {
+  display: block;
+  width: 100%;
+  margin: 8px 0;
+  padding: 8px;
+  background-color: #0066aa;
+  color: white;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-size: 14px;
+}
+
+.question-btn:disabled {
+  background-color: #999;
+  cursor: default;
+}
+
+#status {
+  margin-top: 20px;
+  font-size: 18px;
+  font-weight: bold;
+}
