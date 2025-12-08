@@ -9,7 +9,7 @@ let startTime = null;
 let timerInterval = null;
 let bestAccuracy = null;
 
-// Define quiz locations here.
+// Defined locations
 // Use real lat/lng bounds from Google Maps.
 const locations = [
   {
@@ -59,6 +59,7 @@ const locations = [
   }
 ];
 
+// ---------- Utility functions ----------
 function setStatus(text) {
   const statusEl = document.getElementById("status");
   if (statusEl) statusEl.textContent = text;
@@ -109,6 +110,7 @@ function pointInBounds(latLng, bounds) {
   );
 }
 
+//Timer behavior
 function startTimerIfNeeded() {
   if (startTime !== null) return; // already running
 
@@ -176,6 +178,7 @@ async function initMap() {
     disableDoubleClickZoom: true,
     gestureHandling: "none",
     // hide POIs to increase difficulty
+    // Noteable that some halls are still labeled despite boardwide visibility changes
     styles: [
       { featureType: "poi", elementType: "all", stylers: [{ visibility: "off" }] },
       { featureType: "poi.school", elementType: "all", stylers: [{ visibility: "off" }] },
@@ -216,7 +219,7 @@ async function initMap() {
 
     answeredCount++;
 
-    // disable used button
+    // disable button after answer
     const btn = document.querySelector(
       `.question-btn[data-index="${currentQuestion}"]`
     );
@@ -244,7 +247,7 @@ async function initMap() {
     }
   });
 
-  // Question buttons
+  // Question buttons 
   document.querySelectorAll(".question-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       if (btn.disabled) return;
