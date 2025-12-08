@@ -1,8 +1,13 @@
 let map;
-let currentQuestion = null; // index into locations array
+let currentQuestion = null;  // index into locations array
 let answeredCount = 0;
 let correctCount = 0;
-let rectangles = []; // store drawn rectangles so we can clear them
+let rectangles = [];         // drawn rectangles
+
+// added functionality : Timer + accuracy high score
+let startTime = null;
+let timerInterval = null;
+let bestAccuracy = null;
 
 // Define quiz locations here.
 // Use real lat/lng bounds from Google Maps.
@@ -55,7 +60,24 @@ const locations = [
 ];
 
 function setStatus(text) {
-  document.getElementById("status").textContent = text;
+  const statusEl = document.getElementById("status");
+  if (statusEl) statusEl.textContent = text;
+}
+
+function updateTimerDisplay(seconds) {
+  const timerEl = document.getElementById("timer");
+  if (timerEl) timerEl.textContent = `Time: ${seconds}s`;
+}
+
+function updateBestScoreDisplay() {
+  const el = document.getElementById("best-score");
+  if (!el) return;
+
+  if (bestAccuracy === null) {
+    el.textContent = "Best Accuracy: —";
+  } else {
+    el.textContent = `Best Accuracy: ${(bestAccuracy * 100).toFixed(0)}%`;
+  }
 }
 
 function clearRectangles() {
@@ -63,7 +85,7 @@ function clearRectangles() {
   rectangles = [];
 }
 
-function drawCorrectRectangle(bounds, isCorrect) {
+function drawRectangle(bounds, isCorrect) {
   const rect = new google.maps.Rectangle({
     strokeColor: isCorrect ? "#00FF00" : "#FF0000",
     strokeOpacity: 0.8,
@@ -87,8 +109,60 @@ function pointInBounds(latLng, bounds) {
   );
 }
 
+function startTimerIfNeeded() {
+  if (startTime !== null) return; // already running
+
+  startTime = Date.now();
+  timerInterval = setInterval(() => {
+    const seconds = Math.floor((Date.now() - startTime) / 1000);
+    updateTimerDisplay(seconds);
+  }, 1000);
+}
+
+function stopTimer() {
+  if (timerInterval !== null) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+}
+
+//added functionality : Reset game
+function resetGame() {
+  // reset counters
+  currentQuestion = null;
+  answeredCount = 0;
+  correctCount = 0;
+
+  // reset timer
+  stopTimer();
+  startTime = null;
+  updateTimerDisplay(0);
+
+  // clear rectangles
+  clearRectangles();
+
+  // re-enable buttons
+  document.querySelectorAll(".question-btn").forEach(btn => {
+    btn.disabled = false;
+  });
+
+  setStatus("Click a question to start.");
+}
+
+// ---------- Map init ----------
+
 async function initMap() {
-  // Centered on CSUN
+  // Load best accuracy from localStorage
+  const storedAccuracy = localStorage.getItem("bestAccuracy");
+  if (storedAccuracy !== null) {
+    const parsed = parseFloat(storedAccuracy);
+    if (!isNaN(parsed)) {
+      bestAccuracy = parsed;
+    }
+  }
+  updateBestScoreDisplay();
+
+  // Center around CSUN 
   const center = { lat: 34.23962898582113, lng: -118.52967628011604 };
 
   const { Map } = await google.maps.importLibrary("maps");
@@ -101,29 +175,24 @@ async function initMap() {
     scrollwheel: false,
     disableDoubleClickZoom: true,
     gestureHandling: "none",
-    
+    // hide POIs to increase difficulty
     styles: [
-    // Hide ALL place/building labels ("___ Hall", "Bookstore", etc.)
-    {
-        featureType: "poi",
-        elementType: "labels",
-        stylers: [{ visibility: "off" }]
-    },
-    // Keep street names
-    {
-        featureType: "road",
-        elementType: "labels.text",
-        stylers: [{ visibility: "on" }]
-    },
-    {
-        featureType: "road",
-        elementType: "labels.icon",
-        stylers: [{ visibility: "off" }]
-    }
+      { featureType: "poi", elementType: "all", stylers: [{ visibility: "off" }] },
+      { featureType: "poi.school", elementType: "all", stylers: [{ visibility: "off" }] },
+      { featureType: "poi.business", elementType: "all", stylers: [{ visibility: "off" }] },
+      { featureType: "poi.medical", elementType: "all", stylers: [{ visibility: "off" }] },
+      { featureType: "poi.place_of_worship", elementType: "all", stylers: [{ visibility: "off" }] },
+      { featureType: "poi.sports_complex", elementType: "all", stylers: [{ visibility: "off" }] },
+      { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
+      { featureType: "poi", elementType: "labels.text", stylers: [{ visibility: "off" }] },
+      { featureType: "poi", elementType: "labels.text.fill", stylers: [{ visibility: "off" }] },
+      { featureType: "poi", elementType: "labels.text.stroke", stylers: [{ visibility: "off" }] },
+      { featureType: "road", elementType: "labels.text", stylers: [{ visibility: "on" }] },
+      { featureType: "road", elementType: "labels.icon", stylers: [{ visibility: "off" }] }
     ]
   });
 
-  // Map double click handler
+  // Map double-click handler
   map.addListener("dblclick", (e) => {
     if (currentQuestion === null) {
       setStatus("Choose a question first.");
@@ -136,33 +205,53 @@ async function initMap() {
     clearRectangles();
 
     if (pointInBounds(e.latLng, bounds)) {
-      drawCorrectRectangle(bounds, true);
+      drawRectangle(bounds, true);
       setStatus("Your answer is correct!");
       correctCount++;
+
     } else {
-      drawCorrectRectangle(bounds, false);
+      drawRectangle(bounds, false);
       setStatus("Sorry, wrong location.");
     }
 
     answeredCount++;
-    // disable the used question button
+
+    // disable used button
     const btn = document.querySelector(
       `.question-btn[data-index="${currentQuestion}"]`
     );
     if (btn) btn.disabled = true;
 
-    currentQuestion = null; // require them to pick next question
+    currentQuestion = null;
 
+    // Added functionality: Accuracy check
     if (answeredCount === locations.length) {
-      const incorrect = locations.length - correctCount;
-      setStatus(`${correctCount} Correct, ${incorrect} Incorrect`);
+      stopTimer();
+      const total = locations.length;
+      const incorrect = total - correctCount;
+      const accuracy = total === 0 ? 0 : correctCount / total;
+      const percent = Math.round(accuracy * 100);
+
+      // Show final result in status (no alerts)
+      setStatus(`${correctCount} Correct, ${incorrect} Incorrect (${percent}% accuracy)`);
+
+      // Update best accuracy
+      if (total > 0 && (bestAccuracy === null || accuracy > bestAccuracy)) {
+        bestAccuracy = accuracy;
+        localStorage.setItem("bestAccuracy", bestAccuracy.toString());
+        updateBestScoreDisplay();
+      }
     }
   });
 
-  // Hook up question buttons
+  // Question buttons
   document.querySelectorAll(".question-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       if (btn.disabled) return;
+
+      // start timer on first question
+      startTimerIfNeeded();
+
       currentQuestion = parseInt(btn.dataset.index, 10);
       clearRectangles();
       setStatus(
@@ -170,7 +259,15 @@ async function initMap() {
       );
     });
   });
+
+  // Added functionality : Restart button
+  const restartBtn = document.getElementById("restart-btn");
+  if (restartBtn) {
+    restartBtn.addEventListener("click", () => {
+      resetGame();
+    });
+  }
 }
 
-// Make initMap global so Google’s script can call it
+// Make initMap global for Google callback
 window.initMap = initMap;

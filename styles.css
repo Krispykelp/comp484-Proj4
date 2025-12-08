@@ -42,8 +42,34 @@ h1 {
   cursor: default;
 }
 
+#timer,
+#best-score {
+  margin-top: 10px;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+#restart-btn {
+  margin-top: 15px;
+  padding: 8px 12px;
+  font-size: 14px;
+  background-color: #444;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+
+#restart-btn:hover {
+  background-color: #222;
+}
+
 #status {
   margin-top: 20px;
   font-size: 18px;
   font-weight: bold;
+}
+
+@keyframes flashGreen {
+  0% { filter: brightness(140%) hue-rotate(20deg); }
+  100% { filter: brightness(100%) hue-rotate(0deg); }
 }
