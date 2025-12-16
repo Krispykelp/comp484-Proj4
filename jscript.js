@@ -169,6 +169,7 @@ async function initMap() {
 
   const { Map } = await google.maps.importLibrary("maps");
 
+
   map = new Map(document.getElementById("map"), {
     center,
     zoom: 16.9,
@@ -177,8 +178,8 @@ async function initMap() {
     scrollwheel: false,
     disableDoubleClickZoom: true,
     gestureHandling: "none",
-    // hide POIs to increase difficulty
-    // Noteable that some halls are still labeled despite boardwide visibility changes
+
+    // hide POIs to increase difficulty (google.maps.MapOptions.styles)
     styles: [
       { featureType: "poi", elementType: "all", stylers: [{ visibility: "off" }] },
       { featureType: "poi.school", elementType: "all", stylers: [{ visibility: "off" }] },
@@ -195,7 +196,7 @@ async function initMap() {
     ]
   });
 
-  // Map double-click handler
+  // Map double-click handler (google.maps.event)
   map.addListener("dblclick", (e) => {
     if (currentQuestion === null) {
       setStatus("Choose a question first.");
